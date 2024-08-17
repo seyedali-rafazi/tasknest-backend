@@ -3,20 +3,16 @@ const bcrypt = require("bcrypt");
 const Controller = require("./controller");
 const {
   generateRandomNumber,
-  toPersianDigits,
   setAccessToken,
   setRefreshToken,
   verifyRefreshToken,
 } = require("../../../utils/functions");
 const createError = require("http-errors");
 const { UserModel } = require("../../models/user");
-const Kavenegar = require("kavenegar");
-const CODE_EXPIRES = 90 * 1000; //90 seconds in miliseconds
 const { StatusCodes: HttpStatus } = require("http-status-codes");
 const {
   completeProfileSchema,
   updateProfileSchema,
-  checkOtpSchema,
 } = require("../validators/user.schema");
 
 class userAuthController extends Controller {
@@ -30,9 +26,7 @@ class userAuthController extends Controller {
     let { phoneNumber, password } = req.body;
 
     if (!phoneNumber || !password)
-      throw createError.BadRequest(
-        "شماره موبایل و رمز عبور معتبر را وارد کنید"
-      );
+      throw createError.BadRequest("Enter valid mobile number and password");
 
     phoneNumber = phoneNumber.trim();
     this.phoneNumber = phoneNumber;
@@ -50,7 +44,7 @@ class userAuthController extends Controller {
       const user = await this.saveUser(phoneNumber, hashedPassword);
       await setAccessToken(res, user);
       await setRefreshToken(res, user);
-      let WELLCOME_MESSAGE = `  ثبت نام انجام شد ، به تخصص سازان  خوش آمدید  `;
+      let WELLCOME_MESSAGE = `Registration done, welcome to TaskNest.‍`;
 
       return res.status(HttpStatus.OK).json({
         statusCode: HttpStatus.OK,
@@ -62,12 +56,12 @@ class userAuthController extends Controller {
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid)
-      throw createError.Unauthorized("رمز عبور نامعتبر است.");
+      throw createError.Unauthorized("The password is invalid.");
     await setAccessToken(res, user);
     await setRefreshToken(res, user);
-    let WELLCOME_MESSAGE = `کد تایید شد، به تخصص سازان  خوش آمدید`;
+    let WELLCOME_MESSAGE = `The code is approved, welcome to the TaskNest.`;
     if (!user.isActive)
-      WELLCOME_MESSAGE = `کد تایید شد، لطفا اطلاعات خود را تکمیل کنید`;
+      WELLCOME_MESSAGE = `The code has been verified, please complete your information`;
 
     return res.status(HttpStatus.OK).json({
       statusCode: HttpStatus.OK,
@@ -109,7 +103,7 @@ class userAuthController extends Controller {
     const duplicateUser = await UserModel.findOne({ email });
     if (duplicateUser)
       throw createError.BadRequest(
-        "کاربری با این ایمیل قبلا ثبت نام کرده است."
+        "A user with this email has already registered."
       );
 
     const updatedUser = await UserModel.findOneAndUpdate(
@@ -133,7 +127,7 @@ class userAuthController extends Controller {
     return res.status(HttpStatus.OK).send({
       statusCode: HttpStatus.OK,
       data: {
-        message: "اطلاعات شما با موفقیت تکمیل شد",
+        message: "Your information has been successfully completed",
         user: updatedUser,
       },
     });
@@ -150,11 +144,11 @@ class userAuthController extends Controller {
       }
     );
     if (!updateResult.modifiedCount === 0)
-      throw createError.BadRequest("اطلاعات ویرایش نشد");
+      throw createError.BadRequest("Information could not be edited");
     return res.status(HttpStatus.OK).json({
       statusCode: HttpStatus.OK,
       data: {
-        message: "اطلاعات با موفقیت آپدیت شد",
+        message: "Information successfully updated",
       },
     });
   }
