@@ -7,7 +7,7 @@ async function verifyAccessToken(req, res, next) {
   try {
     const accessToken = req.signedCookies["accessToken"];
     if (!accessToken) {
-      throw createHttpError.Unauthorized("لطفا وارد حساب کاربری خود شوید.");
+      throw createHttpError.Unauthorized("Please login to your account.");
     }
     const token = cookieParser.signedCookie(
       accessToken,
@@ -18,13 +18,13 @@ async function verifyAccessToken(req, res, next) {
       process.env.ACCESS_TOKEN_SECRET_KEY,
       async (err, payload) => {
         try {
-          if (err) throw createHttpError.Unauthorized("توکن نامعتبر است");
+          if (err) throw createHttpError.Unauthorized("Token is invalid");
           const { _id } = payload;
           const user = await UserModel.findById(_id, {
             password: 0,
             otp: 0,
           });
-          if (!user) throw createHttpError.Unauthorized("حساب کاربری یافت نشد");
+          if (!user) throw createHttpError.Unauthorized("Account not found");
           req.user = user;
           return next();
         } catch (error) {
@@ -41,12 +41,10 @@ async function isVerifiedUser(req, res, next) {
   try {
     const user = req.user;
     if (user.status === 1) {
-      throw createHttpError.Forbidden("پروفایل شما در انتظار بررسی است.");
+      throw createHttpError.Forbidden("Your profile is pending review.");
     }
     if (user.status !== 2) {
-      throw createHttpError.Forbidden(
-        "پروفایل شما مورد تایید قرار نگرفته است."
-      );
+      throw createHttpError.Forbidden("Your profile has not been approved.");
     }
     return next();
   } catch (error) {

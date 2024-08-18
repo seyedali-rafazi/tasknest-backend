@@ -25,12 +25,12 @@ class ProposalController extends Controller {
       { $push: { proposals: proposal._id } }
     );
     if (!proposal?._id)
-      throw createHttpError.InternalServerError("پیشنهاد ثبت نشد");
+      throw createHttpError.InternalServerError("Offer not registered");
 
     return res.status(HttpStatus.CREATED).json({
       statusCode: HttpStatus.CREATED,
       data: {
-        message: "پیشنهاد با موفقیت ایجاد شد",
+        message: "Offer created successfully",
       },
     });
   }
@@ -44,11 +44,11 @@ class ProposalController extends Controller {
       dbQuery["user"] = user._id;
     }
 
-   if ([0, 1, 2].includes(parseInt(status))) {
-    dbQuery["status"] = { $in: [parseInt(status)] };
-  }else if (status === "ALL") {
-    // If status is ALL, don't add any condition for status
-  }
+    if ([0, 1, 2].includes(parseInt(status))) {
+      dbQuery["status"] = { $in: [parseInt(status)] };
+    } else if (status === "ALL") {
+      // If status is ALL, don't add any condition for status
+    }
 
     const sortQuery = {};
 
@@ -80,9 +80,11 @@ class ProposalController extends Controller {
   }
   async findProposalById(id) {
     if (!mongoose.isValidObjectId(id))
-      throw createHttpError.BadRequest("شناسه پروژه ارسال شده صحیح نمیباشد");
+      throw createHttpError.BadRequest(
+        "The submitted project ID is not correct"
+      );
     const proposal = await ProposalModel.findById(id);
-    if (!proposal) throw createHttpError.NotFound("پروژه یافت نشد.");
+    if (!proposal) throw createHttpError.NotFound("Project not found.");
     return proposal;
   }
 
@@ -101,12 +103,15 @@ class ProposalController extends Controller {
     await ProjectModel.updateOne({ _id: projectId }, { $set: { freelancer } });
 
     if (!proposal)
-      throw createHttpError.InternalServerError(" وضعیت پروپوزال آپدیت نشد");
+      throw createHttpError.InternalServerError(
+        "Proposal status was not updated"
+      );
 
-    let message = "وضعیت پروپوزال تایید شد";
-    if (status === 0) message = "وضعیت پروپوزال به حالت رد شده تغییر یافت";
+    let message = "Proposal Status Confirmed";
+    if (status === 0) message = "Proposal status changed to Rejected";
     if (status === 1)
-      message = "وضعیت پروپوزال به حالت در انتظار تایید تغییر یافت";
+      message =
+        "The status of the proposal has been changed to pending approval";
 
     return res.status(HttpStatus.OK).json({
       statusCode: HttpStatus.OK,
